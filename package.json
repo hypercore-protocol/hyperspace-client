@@ -1,0 +1,33 @@
+{
+  "name": "@hyperspace/client",
+  "version": "0.0.0",
+  "description": "Standalone Hyperspace RPC client",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hyperspace-org/hyperspace.git"
+  },
+  "keywords": [
+    "hypercore",
+    "hyperspace",
+    "rpc"
+  ],
+  "author": "Hypercore Protocol Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hyperspace-org/hyperspace/issues"
+  },
+  "homepage": "https://github.com/hyperspace-org/hyperspace#readme",
+  "dependencies": {
+    "@hyperspace/rpc": "0.0.0",
+    "call-me-maybe": "^1.0.1",
+    "codecs": "^2.1.0",
+    "hypercore-crypto": "^2.1.0",
+    "hypercore-streams": "^1.0.0",
+    "inspect-custom-symbol": "^1.1.1",
+    "nanoresource-promise": "^1.2.2"
+  }
+}
