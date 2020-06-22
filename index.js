@@ -295,18 +295,31 @@ class RemoteHypercore extends Nanoresource {
     return rsp.seq
   }
 
-  async _get (seq, opts) {
+  async _get (seq, opts, resourceId) {
     if (!this.opened) await this.open()
     if (this.closed) throw new Error('Feed is closed')
 
     const rsp = await this._client.hypercore.get({
       ...opts,
       seq,
-      id: this._id
+      id: this._id,
+      resourceId
     })
     if (opts && opts.valueEncoding) return codecs(opts.valueEncoding).decode(rsp.block)
     if (this.valueEncoding) return this.valueEncoding.decode(rsp.block)
     return rsp.block
+  }
+
+  async _cancel (resourceId) {
+    try {
+      if (!this.opened) await this.open()
+      if (this.closed) return
+    } catch (_) {}
+
+    this._client.hypercore.cancelNoReply({
+      id: this._id,
+      resourceId
+    })
   }
 
   async _update (opts) {
@@ -355,10 +368,12 @@ class RemoteHypercore extends Nanoresource {
   }
 
   async _undownload (resourceId) {
-    if (!this.opened) await this.open()
-    if (this.closed) throw new Error('Feed is closed')
+    try {
+      if (!this.opened) await this.open()
+      if (this.closed) return
+    } catch (_) {}
 
-    return this._client.hypercore.undownload({ id: this._id, resourceId })
+    return this._client.hypercore.undownloadNoReply({ id: this._id, resourceId })
   }
 
   async _downloaded (start, end) {
@@ -379,7 +394,12 @@ class RemoteHypercore extends Nanoresource {
       cb = opts
       opts = null
     }
-    return maybe(cb, this._get(seq, opts))
+
+    const resourceId = this._sessions.createResourceId()
+    const prom = this._get(seq, opts, resourceId)
+    prom.resourceId = resourceId
+    maybe(cb, prom)
+    return prom
   }
 
   update (opts, cb) {
@@ -404,6 +424,11 @@ class RemoteHypercore extends Nanoresource {
 
   has (seq, cb) {
     return maybe(cb, this._has(seq))
+  }
+
+  cancel (get) {
+    if (typeof get.resourceId !== 'number') throw new Error('Must pass a get return value')
+    return this._cancel(get.resourceId)
   }
 
   createReadStream (opts) {
@@ -444,9 +469,9 @@ class RemoteHypercore extends Nanoresource {
     return prom // always return prom as that one is the "cancel" token
   }
 
-  undownload (dl, cb) {
-    if (typeof dl.resourceId !== 'number') throw new Error('Must pass a download return value')
-    return maybeOptional(cb, this._undownload(dl.resourceId))
+  undownload (download) {
+    if (typeof download.resourceId !== 'number') throw new Error('Must pass a download return value')
+    this._undownload(download.resourceId)
   }
 
   downloaded (start, end, cb) {
