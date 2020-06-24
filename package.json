@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/hyperspace-org/hyperspace#readme",
   "dependencies": {
-    "@hyperspace/rpc": "0.0.0",
+    "@hyperspace/rpc": "^1.0.0",
     "call-me-maybe": "^1.0.1",
     "codecs": "^2.1.0",
     "hypercore-crypto": "^2.1.0",
