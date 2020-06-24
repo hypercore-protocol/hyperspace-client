@@ -139,8 +139,8 @@ class RemoteNetworker extends EventEmitter {
     })
   }
 
-  configure (discoveryKey, opts = {}) {
-    return this._client.network.configure({
+  configure (discoveryKey, opts = {}, cb) {
+    return maybe(cb, this._client.network.configure({
       configuration: {
         discoveryKey,
         announce: opts.announce,
@@ -150,23 +150,27 @@ class RemoteNetworker extends EventEmitter {
       flush: opts.flush,
       copyFrom: opts.copyFrom,
       overwrite: opts.overwrite
-    })
+    }))
   }
 
-  async getConfiguration (discoveryKey) {
-    const rsp = await this._client.network.getConfiguration({
-      discoveryKey
-    })
-    return rsp.configuration
+  async getConfiguration (discoveryKey, cb) {
+    return maybe(cb, (async () => {
+      const rsp = await this._client.network.getConfiguration({
+        discoveryKey
+      })
+      return rsp.configuration
+    })())
   }
 
-  async getAllConfigurations () {
-    const rsp = await this._client.network.getAllConfigurations()
-    return rsp.configurations
+  async getAllConfigurations (cb) {
+    return maybe(cb, (async () => {
+      const rsp = await this._client.network.getAllConfigurations()
+      return rsp.configurations
+    })())
   }
 
-  listPeers () {
-    return this._client.network.listPeers()
+  listPeers (cb) {
+    return maybe(cb, this._client.network.listPeers())
   }
 }
 
