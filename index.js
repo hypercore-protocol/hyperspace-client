@@ -267,6 +267,7 @@ class RemoteHypercore extends Nanoresource {
   _onpeeropen (peer) {
     const remotePeer = new RemoteHypercorePeer(peer.type, peer.remoteAddress, peer.remotePublicKey)
     this.peers.push(remotePeer)
+    this.emit('peer-add', remotePeer) // compat
     this.emit('peer-open', remotePeer)
   }
 
