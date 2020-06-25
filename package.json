@@ -25,6 +25,7 @@
     "@hyperspace/rpc": "^1.0.0",
     "call-me-maybe": "^1.0.1",
     "codecs": "^2.1.0",
+    "freemap": "^1.0.0",
     "hypercore-crypto": "^2.1.0",
     "hypercore-streams": "^1.0.0",
     "inspect-custom-symbol": "^1.1.1",

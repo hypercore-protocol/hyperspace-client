@@ -3,6 +3,7 @@ const maybe = require('call-me-maybe')
 const codecs = require('codecs')
 const hypercoreCrypto = require('hypercore-crypto')
 const inspect = require('inspect-custom-symbol')
+const FreeMap = require('freemap')
 const { WriteStream, ReadStream } = require('hypercore-streams')
 
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
@@ -11,16 +12,12 @@ const getSocketName = require('@hyperspace/rpc/socket')
 
 class Sessions {
   constructor () {
-    this._counter = 0
+    this._cores = new FreeMap()
     this._resourceCounter = 0
-    this._freeList = []
-    this._remoteCores = new Map()
   }
 
   create (remoteCore) {
-    const id = this._freeList.length ? this._freeList.pop() : this._counter++
-    this._remoteCores.set(id, remoteCore)
-    return id
+    return this._cores.add(remoteCore)
   }
 
   createResourceId () {
@@ -28,12 +25,11 @@ class Sessions {
   }
 
   delete (id) {
-    this._remoteCores.delete(id)
-    this._freeList.push(id)
+    this._cores.free(id)
   }
 
   get (id) {
-    return this._remoteCores.get(id)
+    return this._cores.get(id)
   }
 }
 
@@ -69,6 +65,11 @@ class RemoteCorestore extends EventEmitter {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
         remoteCore._onextension({ resourceId, remotePublicKey, data })
+      },
+      onWait ({ id, onWaitId }) {
+        const remoteCore = this._sessions.get(id)
+        if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
+        remoteCore._onwait(onWaitId)
       }
     })
     this._client.corestore.onRequest(this, {
@@ -113,13 +114,13 @@ class RemoteCorestore extends EventEmitter {
   }
 
   ready (cb) {
-    return process.nextTick(cb, null)
+    if (cb) process.nextTick(cb, null)
   }
 
   close (cb) {
     // TODO: This is a noop for now, but in the future it should send a signal to the daemon to close cores.
     // Closing the top-level client will close the cores (so resource management is still handled).
-    return process.nextTick(cb, null)
+    if (cb) process.nextTick(cb, null)
   }
 }
 
@@ -197,6 +198,7 @@ class RemoteHypercore extends Nanoresource {
     this._name = opts.name
     this._id = this.lazy ? undefined : this._sessions.create(this)
     this._extensions = new Map()
+    this._onwaits = new FreeMap(1)
 
     if (!this.lazy) this.ready(() => {})
   }
@@ -247,6 +249,14 @@ class RemoteHypercore extends Nanoresource {
   }
 
   // Events
+
+  _onwait (id) {
+    const onwait = this._onwaits.get(id)
+    if (onwait) {
+      this._onwaits.free(id)
+      onwait()
+    }
+  }
 
   _onappend (rsp) {
     this.length = rsp.length
@@ -303,12 +313,24 @@ class RemoteHypercore extends Nanoresource {
     if (!this.opened) await this.open()
     if (this.closed) throw new Error('Feed is closed')
 
-    const rsp = await this._client.hypercore.get({
-      ...opts,
-      seq,
-      id: this._id,
-      resourceId
-    })
+    let onWaitId = 0
+    const onwait = opts && opts.onwait
+    if (onwait) onWaitId = this._onwaits.add(onwait)
+
+    let rsp
+
+    try {
+      rsp = await this._client.hypercore.get({
+        ...opts,
+        seq,
+        id: this._id,
+        resourceId,
+        onWaitId
+      })
+    } finally {
+      if (onWaitId !== 0 && onwait === this._onwaits.get(onWaitId)) this._onwaits.free(onWaitId)
+    }
+
     if (opts && opts.valueEncoding) return codecs(opts.valueEncoding).decode(rsp.block)
     if (this.valueEncoding) return this.valueEncoding.decode(rsp.block)
     return rsp.block
