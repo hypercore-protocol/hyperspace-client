@@ -36,9 +36,11 @@ class Sessions {
 class RemoteCorestore extends EventEmitter {
   constructor (opts = {}) {
     super()
+
+    this.name = opts.name || null
     this._client = opts.client
-    this._name = opts.name
     this._sessions = opts.sessions || new Sessions()
+    this._feeds = new Map()
 
     this._client.hypercore.onRequest(this, {
       onAppend ({ id, length, byteLength }) {
@@ -93,7 +95,7 @@ class RemoteCorestore extends EventEmitter {
   }
 
   default (opts = {}) {
-    return this.get(opts.key, { name: this._name })
+    return this.get(opts.key, { name: this.name })
   }
 
   get (key, opts = {}) {
@@ -102,14 +104,33 @@ class RemoteCorestore extends EventEmitter {
       key = opts.key
     }
     if (typeof key === 'string') key = Buffer.from(key, 'hex')
-    return new RemoteHypercore(this._client, this._sessions, key, opts)
+
+    let hex = key && key.toString('hex')
+    if (hex && this._feeds.has(hex)) return this._feeds.get(hex)
+
+    const feed = new RemoteHypercore(this._client, this._sessions, key, opts)
+
+    if (hex) {
+      this._feeds.set(hex, feed)
+    } else {
+      feed.on('ready', () => {
+        hex = feed.key.toString('hex')
+        if (!this._feeds.has(hex)) this._feeds.set(hex, feed)
+      })
+    }
+
+    feed.on('close', () => {
+      if (hex && this._feeds.get(hex) === feed) this._feeds.delete(hex)
+    })
+
+    return feed
   }
 
   namespace (name) {
     return new this.constructor({
       client: this._client,
       sessions: this._sessions,
-      name
+      name: name || randomNamespace()
     })
   }
 
@@ -117,10 +138,23 @@ class RemoteCorestore extends EventEmitter {
     if (cb) process.nextTick(cb, null)
   }
 
+  async _closeAll () {
+    const proms = []
+    for (const [k, feed] of this._feeds) {
+      this._feeds.delete(k)
+      proms.push(feed.close())
+    }
+
+    try {
+      await Promise.all(proms)
+    } catch (err) {
+      await Promise.allSettled(proms)
+      throw err
+    }
+  }
+
   close (cb) {
-    // TODO: This is a noop for now, but in the future it should send a signal to the daemon to close cores.
-    // Closing the top-level client will close the cores (so resource management is still handled).
-    if (cb) process.nextTick(cb, null)
+    return maybeOptional(cb, this._closeAll())
   }
 }
 
@@ -649,6 +683,12 @@ module.exports = class HyperspaceClient extends Nanoresource {
 }
 
 function noop () {}
+
+function randomNamespace () { // does *not* have to be secure
+  let ns = ''
+  while (ns < 64) ns += Math.random().toString(16).slice(2)
+  return ns.slice(0, 64)
+}
 
 function maybeOptional (cb, prom) {
   prom = maybe(cb, prom)
