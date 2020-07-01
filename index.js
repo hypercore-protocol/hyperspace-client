@@ -9,6 +9,7 @@ const { WriteStream, ReadStream } = require('hypercore-streams')
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 const HRPC = require('@hyperspace/rpc')
 const getSocketName = require('@hyperspace/rpc/socket')
+const net = require('net')
 
 class Sessions {
   constructor () {
@@ -685,6 +686,28 @@ module.exports = class HyperspaceClient extends Nanoresource {
     this.corestore = new RemoteCorestore({ client: this._client })
     this.network = new RemoteNetworker({ client: this._client })
     this.plugins = new RemotePlugins({ client: this._client })
+  }
+
+  static async serverReady (host) {
+    const sock = getSocketName(host)
+    return new Promise((resolve) => {
+      retry()
+
+      function retry () {
+        const socket = net.connect(sock)
+        let connected = false
+
+        socket.on('connect', function () {
+          connected = true
+          socket.destroy()
+        })
+        socket.on('error', socket.destroy)
+        socket.on('close', function () {
+          if (connected) return resolve()
+          setTimeout(retry, 100)
+        })
+      }
+    })
   }
 
   _open () {
