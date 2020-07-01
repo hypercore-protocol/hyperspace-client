@@ -655,29 +655,6 @@ class RemoteExtension {
   }
 }
 
-class RemotePlugins {
-  constructor ({ client }) {
-    this._client = client
-  }
-
-  async _start (data) {
-    return (await this._client.plugins.start(data)).value
-  }
-
-  start (name, value, cb) {
-    if (typeof value === 'function') return this.start(name, null, value)
-    return maybe(cb, this._start({ name, value }))
-  }
-
-  stop (name, cb) {
-    return maybe(cb, this._client.plugins.stop({ name }))
-  }
-
-  status (name, cb) {
-    return maybe(cb, this._client.plugins.status({ name }))
-  }
-}
-
 module.exports = class HyperspaceClient extends Nanoresource {
   constructor (opts = {}) {
     super()
@@ -685,7 +662,6 @@ module.exports = class HyperspaceClient extends Nanoresource {
     this._client = HRPC.connect(this._sock)
     this.corestore = new RemoteCorestore({ client: this._client })
     this.network = new RemoteNetworker({ client: this._client })
-    this.plugins = new RemotePlugins({ client: this._client })
   }
 
   static async serverReady (host) {
