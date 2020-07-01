@@ -162,16 +162,38 @@ class RemoteNetworker extends EventEmitter {
   constructor (opts) {
     super()
     this._client = opts.client
+
+    this.peers = null
     this.publicKey = null
 
     this._client.network.onRequest(this, {
-      onPeerOpen ({ peer }) {
-        return this.emit('peer-open', peer)
+      onPeerAdd ({ peer }) {
+        this.peers.push(peer)
+        this.emit('peer-open', peer)
+        this.emit('peer-add', peer)
       },
       onPeerRemove ({ peer }) {
-        return this.emit('peer-remove', peer)
+        for (let i = 0; i < this.peers.length; i++) {
+          if (!peer.remotePublicKey.equals(this.peers[i].remotePublicKey)) continue
+          this.peers[i] = this.peers[this.peers.length - 1]
+          this.peers.pop()
+          break
+        }
+        this.emit('peer-remove', peer)
       }
     })
+
+    this.ready()
+  }
+
+  ready (cb) {
+    return maybe(cb, this._open())
+  }
+
+  async _open () {
+    if (this.peers) return null
+    const rsp = await this._client.network.open()
+    this.peers = rsp.peers
   }
 
   configure (discoveryKey, opts = {}, cb) {
@@ -188,24 +210,20 @@ class RemoteNetworker extends EventEmitter {
     }))
   }
 
-  async getConfiguration (discoveryKey, cb) {
+  async status (discoveryKey, cb) {
     return maybe(cb, (async () => {
-      const rsp = await this._client.network.getConfiguration({
+      const rsp = await this._client.network.status({
         discoveryKey
       })
-      return rsp.configuration
+      return rsp.status
     })())
   }
 
-  async getAllConfigurations (cb) {
+  async allStatuses (cb) {
     return maybe(cb, (async () => {
-      const rsp = await this._client.network.getAllConfigurations()
-      return rsp.configurations
+      const rsp = await this._client.network.allStatuses()
+      return rsp.statuses
     })())
-  }
-
-  listPeers (cb) {
-    return maybe(cb, this._client.network.listPeers())
   }
 }
 
