@@ -206,7 +206,6 @@ class RemoteNetworker extends EventEmitter {
     for (let i = 0; i < this.peers.length; i++) {
       if (remotePublicKey.equals(this.peers[i].remotePublicKey)) return i
     }
-
     return -1
   }
 
@@ -214,6 +213,10 @@ class RemoteNetworker extends EventEmitter {
     if (this.peers) return null
     const rsp = await this._client.network.open()
     this.peers = rsp.peers
+    this.keyPair = {
+      publicKey: rsp.publicKey,
+      privateKey: null
+    }
   }
 
   // Public Methods
@@ -426,7 +429,6 @@ class RemoteHypercore extends Nanoresource {
     for (let i = 0; i < this.peers.length; i++) {
       if (remotePublicKey.equals(this.peers[i].remotePublicKey)) return i
     }
-
     return -1
   }
 
