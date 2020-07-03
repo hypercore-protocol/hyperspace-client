@@ -163,6 +163,8 @@ class RemoteNetworker extends EventEmitter {
   constructor (opts) {
     super()
     this._client = opts.client
+    this._sessions = opts.sessions
+    this._extensions = new Map()
 
     this.peers = null
     this.publicKey = null
@@ -268,10 +270,21 @@ class RemoteNetworkerExtension {
     this.networker = networker
     this.resourceId = networker._sessions.createResourceId()
     this.name = name
-    this.onmessage = opts.onmessage || noop
-    this.onerror = opts.onerror || noop
     this.encoding = codecs((opts && opts.encoding) || 'binary')
     this.destroyed = false
+
+    this.onerror = opts.onerror || noop
+    this.onmessage = noop
+    if (opts.onmessage) {
+      this.onmessage = (message, peer) => {
+        try {
+          message = this.encoding.decode(message)
+        } catch (err) {
+          return this.onerror(err)
+        }
+        return opts.onmessage(message, peer)
+      }
+    }
 
     this.networker._client.network.registerExtensionNoReply({
       id: 0,
@@ -296,7 +309,7 @@ class RemoteNetworkerExtension {
     this.networker._client.network.sendExtensionNoReply({
       id: 0,
       resourceId: this.resourceId,
-      remotePublicKey: null,
+      remotePublicKey: peer.remotePublicKey,
       data: message
     })
   }
@@ -696,10 +709,21 @@ class RemoteHypercoreExtension {
     this.feed = feed
     this.resourceId = feed._sessions.createResourceId()
     this.name = name
-    this.onmessage = opts.onmessage || noop
-    this.onerror = opts.onerror || noop
     this.encoding = codecs((opts && opts.encoding) || 'binary')
     this.destroyed = false
+
+    this.onerror = opts.onerror || noop
+    this.onmessage = noop
+    if (opts.onmessage) {
+      this.onmessage = (message, peer) => {
+        try {
+          message = this.encoding.decode(message)
+        } catch (err) {
+          return this.onerror(err)
+        }
+        return opts.onmessage(message, peer)
+      }
+    }
 
     const reg = () => {
       this.feed._client.hypercore.registerExtensionNoReply({
@@ -735,7 +759,7 @@ class RemoteHypercoreExtension {
     this.feed._client.hypercore.sendExtensionNoReply({
       id: this.feed._id,
       resourceId: this.resourceId,
-      remotePublicKey: null,
+      remotePublicKey: peer.remotePublicKey,
       data: message
     })
   }
@@ -744,7 +768,7 @@ class RemoteHypercoreExtension {
     this.destroyed = true
     this.feed.ready((err) => {
       if (err) return this.onerror(err)
-      this.feed._client.unregisterExtensionNoReply({
+      this.feed._client.hypercore.unregisterExtensionNoReply({
         id: this.feed._id,
         resourceId: this.resourceId
       }, err => {
