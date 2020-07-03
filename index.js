@@ -168,33 +168,58 @@ class RemoteNetworker extends EventEmitter {
     this.publicKey = null
 
     this._client.network.onRequest(this, {
-      onPeerAdd ({ peer }) {
-        this.peers.push(peer)
-        this.emit('peer-open', peer)
-        this.emit('peer-add', peer)
-      },
-      onPeerRemove ({ peer }) {
-        for (let i = 0; i < this.peers.length; i++) {
-          if (!peer.remotePublicKey.equals(this.peers[i].remotePublicKey)) continue
-          this.peers[i] = this.peers[this.peers.length - 1]
-          this.peers.pop()
-          break
-        }
-        this.emit('peer-remove', peer)
-      }
+      onPeerAdd: this._onpeeradd.bind(this),
+      onPeerRemove: this._onpeerremove.bind(this),
+      onExtension: this._onextension.bind(this)
     })
 
     this.ready()
   }
 
-  ready (cb) {
-    return maybe(cb, this._open())
+  // Event Handlers
+
+  _onpeeradd ({ peer }) {
+    this.peers.push(peer)
+    this.emit('peer-open', peer)
+    this.emit('peer-add', peer)
+  }
+
+  _onpeerremove ({ peer }) {
+    const idx = this._indexOfPeer(peer.remotePublicKey)
+    if (idx === -1) return
+    this.peers[idx] = this.peers[this.peers.length - 1]
+    this.peers.pop()
+    this.emit('peer-remove', peer)
+  }
+
+  _onextension ({ resourceId, remotePublicKey, data }) {
+    const idx = this._indexOfPeer(remotePublicKey)
+    if (idx === -1) return
+    const remotePeer = this.peers[idx]
+    const ext = this._extensions.get(resourceId)
+    ext.onmessage(data, remotePeer)
+  }
+
+  // Private Methods
+
+  _indexOfPeer (remotePublicKey) {
+    for (let i = 0; i < this.peers.length; i++) {
+      if (remotePublicKey.equals(this.peers[i].remotePublicKey)) return i
+    }
+
+    return -1
   }
 
   async _open () {
     if (this.peers) return null
     const rsp = await this._client.network.open()
     this.peers = rsp.peers
+  }
+
+  // Public Methods
+
+  ready (cb) {
+    return maybe(cb, this._open())
   }
 
   configure (discoveryKey, opts = {}, cb) {
@@ -225,6 +250,61 @@ class RemoteNetworker extends EventEmitter {
       const rsp = await this._client.network.allStatuses()
       return rsp.statuses
     })())
+  }
+
+  registerExtension (name, opts) {
+    const ext = new RemoteNetworkerExtension(this, name, opts)
+    this._extensions.set(ext.resourceId, ext)
+    return ext
+  }
+}
+
+class RemoteNetworkerExtension {
+  constructor (networker, name, opts = {}) {
+    this.networker = networker
+    this.resourceId = networker._sessions.createResourceId()
+    this.name = name
+    this.onmessage = opts.onmessage || noop
+    this.onerror = opts.onerror || noop
+    this.encoding = codecs((opts && opts.encoding) || 'binary')
+
+    this.networker._client.network.registerExtensionNoReply({
+      id: 0,
+      resourceId: this.resourceId,
+      name: this.name
+    })
+  }
+
+  broadcast (message) {
+    const buf = this.encoding.encode(message)
+    this.networker._client.network.sendExtensionNoReply({
+      id: 0,
+      resourceId: this.resourceId,
+      remotePublicKey: null,
+      data: buf
+    })
+  }
+
+  send (message, peer) {
+    this.networker._client.network.sendExtensionNoReply({
+      id: 0,
+      resourceId: this.resourceId,
+      remotePublicKey: null,
+      data: message
+    })
+  }
+
+  destroy (cb) {
+    return maybe(cb, new Promise((resolve, reject) => {
+        this.networker._client.network.unregisterExtensionNoReply({
+          id: 0,
+          resourceId: this.resourceId
+        }, err => {
+          if (err) return reject(err)
+          this.networker._extensions.delete(this.resourceId)
+          return resolve(null)
+        })
+    }))
   }
 }
 
@@ -588,7 +668,7 @@ class RemoteHypercore extends Nanoresource {
   // TODO: Unimplemented methods
 
   registerExtension (name, opts) {
-    const ext = new RemoteExtension(this, name, opts)
+    const ext = new RemoteHypercoreExtension(this, name, opts)
     this._extensions.set(ext.resourceId, ext)
     return ext
   }
@@ -606,10 +686,10 @@ class RemoteHypercorePeer {
   }
 }
 
-class RemoteExtension {
+class RemoteHypercoreExtension {
   constructor (feed, name, opts = {}) {
-    this.resourceId = feed._sessions.createResourceId()
     this.feed = feed
+    this.resourceId = feed._sessions.createResourceId()
     this.name = name
     this.onmessage = opts.onmessage || noop
     this.onerror = opts.onerror || noop
@@ -653,6 +733,22 @@ class RemoteExtension {
       data: message
     })
   }
+
+  destroy (cb) {
+    return maybe(cb, new Promise((resolve, reject) => {
+      this.feed.ready(err => {
+        if (err) return reject(err)
+        this.feed._client.unregisterExtensionNoReply({
+          id: this.feed._id,
+          resourceId: this.resourceId
+        }, err => {
+          if (err) return reject(err)
+          this.feed._extensions.delete(this.resourceId)
+          return resolve(null)
+        })
+      })
+    }))
+  }
 }
 
 module.exports = class HyperspaceClient extends Nanoresource {
@@ -660,8 +756,10 @@ module.exports = class HyperspaceClient extends Nanoresource {
     super()
     this._sock = getSocketName(opts.host)
     this._client = HRPC.connect(this._sock)
-    this.corestore = new RemoteCorestore({ client: this._client })
-    this.network = new RemoteNetworker({ client: this._client })
+
+    const sessions = new Sessions()
+    this.corestore = new RemoteCorestore({ client: this._client, sessions })
+    this.network = new RemoteNetworker({ client: this._client, sessions })
   }
 
   static async serverReady (host) {
