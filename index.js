@@ -197,6 +197,7 @@ class RemoteNetworker extends EventEmitter {
     if (idx === -1) return
     const remotePeer = this.peers[idx]
     const ext = this._extensions.get(resourceId)
+    if (ext.destroyed) return
     ext.onmessage(data, remotePeer)
   }
 
@@ -270,6 +271,7 @@ class RemoteNetworkerExtension {
     this.onmessage = opts.onmessage || noop
     this.onerror = opts.onerror || noop
     this.encoding = codecs((opts && opts.encoding) || 'binary')
+    this.destroyed = false
 
     this.networker._client.network.registerExtensionNoReply({
       id: 0,
@@ -279,6 +281,7 @@ class RemoteNetworkerExtension {
   }
 
   broadcast (message) {
+    if (this.destroyed) return
     const buf = this.encoding.encode(message)
     this.networker._client.network.sendExtensionNoReply({
       id: 0,
@@ -289,6 +292,7 @@ class RemoteNetworkerExtension {
   }
 
   send (message, peer) {
+    if (this.destroyed) return
     this.networker._client.network.sendExtensionNoReply({
       id: 0,
       resourceId: this.resourceId,
@@ -297,17 +301,15 @@ class RemoteNetworkerExtension {
     })
   }
 
-  destroy (cb) {
-    return maybe(cb, new Promise((resolve, reject) => {
-        this.networker._client.network.unregisterExtensionNoReply({
-          id: 0,
-          resourceId: this.resourceId
-        }, err => {
-          if (err) return reject(err)
-          this.networker._extensions.delete(this.resourceId)
-          return resolve(null)
-        })
-    }))
+  destroy () {
+    this.destroyed = true
+    this.networker._client.network.unregisterExtensionNoReply({
+      id: 0,
+      resourceId: this.resourceId
+    }, (err) => {
+      if (err) this.onerror(err)
+      this.networker._extensions.delete(this.resourceId)
+    })
   }
 }
 
@@ -420,6 +422,7 @@ class RemoteHypercore extends Nanoresource {
     if (idx === -1) return
     const remotePeer = this.peers[idx]
     const ext = this._extensions.get(resourceId)
+    if (ext.destroyed) return
     ext.onmessage(data, remotePeer)
   }
 
@@ -696,6 +699,7 @@ class RemoteHypercoreExtension {
     this.onmessage = opts.onmessage || noop
     this.onerror = opts.onerror || noop
     this.encoding = codecs((opts && opts.encoding) || 'binary')
+    this.destroyed = false
 
     const reg = () => {
       this.feed._client.hypercore.registerExtensionNoReply({
@@ -717,7 +721,7 @@ class RemoteHypercoreExtension {
 
   broadcast (message) {
     const buf = this.encoding.encode(message)
-    if (this.feed._id === undefined) return
+    if (this.feed._id === undefined || this.destroyed) return
     this.feed._client.hypercore.sendExtensionNoReply({
       id: this.feed._id,
       resourceId: this.resourceId,
@@ -727,7 +731,7 @@ class RemoteHypercoreExtension {
   }
 
   send (message, peer) {
-    if (this.feed._id === undefined) return
+    if (this.feed._id === undefined || this.destroyed) return
     this.feed._client.hypercore.sendExtensionNoReply({
       id: this.feed._id,
       resourceId: this.resourceId,
@@ -736,20 +740,18 @@ class RemoteHypercoreExtension {
     })
   }
 
-  destroy (cb) {
-    return maybe(cb, new Promise((resolve, reject) => {
-      this.feed.ready(err => {
-        if (err) return reject(err)
-        this.feed._client.unregisterExtensionNoReply({
-          id: this.feed._id,
-          resourceId: this.resourceId
-        }, err => {
-          if (err) return reject(err)
-          this.feed._extensions.delete(this.resourceId)
-          return resolve(null)
-        })
+  destroy () {
+    this.destroyed = true
+    this.feed.ready((err) => {
+      if (err) return this.onerror(err)
+      this.feed._client.unregisterExtensionNoReply({
+        id: this.feed._id,
+        resourceId: this.resourceId
+      }, err => {
+        if (err) this.onerror(err)
+        this.feed._extensions.delete(this.resourceId)
       })
-    }))
+    })
   }
 }
 
