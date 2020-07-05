@@ -267,6 +267,10 @@ class RemoteNetworker extends EventEmitter {
 
 class RemoteNetworkerExtension {
   constructor (networker, name, opts = {}) {
+    if (typeof name === 'object') {
+      opts = name
+      name = opts.name
+    }
     this.networker = networker
     this.resourceId = networker._sessions.createResourceId()
     this.name = name
@@ -706,6 +710,10 @@ class RemoteHypercorePeer {
 
 class RemoteHypercoreExtension {
   constructor (feed, name, opts = {}) {
+    if (typeof name === 'object') {
+      opts = name
+      name = opts.name
+    }
     this.feed = feed
     this.resourceId = feed._sessions.createResourceId()
     this.name = name
@@ -812,7 +820,8 @@ module.exports = class HyperspaceClient extends Nanoresource {
     })
   }
 
-  _open () {
+  async _open () {
+    await this.network.ready()
     return this._client.connected
   }
 
