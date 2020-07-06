@@ -820,6 +820,10 @@ module.exports = class HyperspaceClient extends Nanoresource {
     })
   }
 
+  async status (cb) {
+    return maybe(cb, this._client.hyperspace.status())
+  }
+
   async _open () {
     await this.network.ready()
     return this._client.connected
