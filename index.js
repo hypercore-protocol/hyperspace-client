@@ -229,17 +229,23 @@ class RemoteNetworker extends EventEmitter {
   }
 
   configure (discoveryKey, opts = {}, cb) {
-    return maybe(cb, this._client.network.configure({
+    const resourceId = this._sessions.createResourceId()
+    const configureProm = maybe(cb, this._client.network.configure({
       configuration: {
         discoveryKey,
         announce: opts.announce,
         lookup: opts.lookup,
         remember: opts.remember
       },
+      resourceId,
       flush: opts.flush,
       copyFrom: opts.copyFrom,
       overwrite: opts.overwrite
     }))
+    configureProm.unconfigure = async (cb) => {
+      return maybe(cb, this._client.network.unconfigure({ discoveryKey, resourceId }))
+    }
+    return configureProm
   }
 
   async status (discoveryKey, cb) {
