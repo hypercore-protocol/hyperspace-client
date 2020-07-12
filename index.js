@@ -793,15 +793,16 @@ class RemoteHypercoreExtension {
   }
 }
 
-module.exports = class HyperspaceClient extends Nanoresource {
+module.exports = class HyperspaceClient {
   constructor (opts = {}) {
-    super()
+    const sessions = new Sessions()
+
     this._sock = getSocketName(opts.host)
     this._client = HRPC.connect(this._sock)
+    this._corestore = new RemoteCorestore({ client: this._client, sessions })
 
-    const sessions = new Sessions()
-    this.corestore = new RemoteCorestore({ client: this._client, sessions })
     this.network = new RemoteNetworker({ client: this._client, sessions })
+    this.corestore = (name) => this._corestore.namespace(name)
   }
 
   static async serverReady (host) {
@@ -826,21 +827,16 @@ module.exports = class HyperspaceClient extends Nanoresource {
     })
   }
 
-  async status (cb) {
+  status (cb) {
     return maybe(cb, this._client.hyperspace.status())
   }
 
-  async _open () {
-    await this.network.ready()
-    return this._client.connected
-  }
-
-  _close () {
+  close () {
     return this._client.destroy()
   }
 
   ready (cb) {
-    return maybe(cb, this.open())
+    return maybe(cb, this.network.ready())
   }
 }
 
