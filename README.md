@@ -11,7 +11,7 @@ npm install @hyperspace/client
 ``` js
 const HyperspaceClient = require('@hyperspace/client')
 
-const client = new HyperspaceClient() // connect to the daemon
+const client = new HyperspaceClient() // connect to the Hyperspace server
 
 const corestore = client.corestore() // make a corestore
 
