@@ -119,7 +119,102 @@ Register a network protocol extension.
 
 ## Remote Feed
 
-The remote feed instances has an API that mimicks the normal [hypercore](https://github.com/hypercore-protocol/hypercore) API.
+The remote feed instances has an API that mimicks the normal [Hypercore](https://github.com/hypercore-protocol/hypercore) API.
+
+#### `feed.key`
+
+The feed public key
+
+#### `feed.discoveryKey`
+
+The feed discovery key.
+
+#### `feed.writable`
+
+Boolean indicating if this feed is writable.
+
+#### `await feed.ready([callback])`
+
+Wait for the key, discoveryKey, writability, initial peers to be loaded.
+
+#### `const block = await feed.get(index, [options], [callback])`
+
+Get a block of data from the feed.
+
+Options include:
+
+```
+{
+  ifAvailable: true,
+  wait: false,
+  onwait () { ... }
+}
+```
+
+See the [Hypercore docs](https://github.com/hypercore-protocol/hypercore) for more info on these options.
+
+Note if you don't await the promise straight away you can use it to to cancel the operation, later using `feed.cancel`
+
+``` js
+const p = feed.get(42)
+// ... cancel the get
+feed.cancel(p)
+await p // Was cancelled
+```
+
+#### `feed.cancel(p)`
+
+Cancel a get
+
+#### `await feed.has(index, [callback])`
+
+Check if the feed has a specific block
+
+#### `await feed.download(start, end, [callback])`
+
+Select a range to be downloaded.
+Similarly to `feed.get` you can use the promise itself
+to cancel a download using `feed.undownload(p)`
+
+#### `feed.undownload(p)`
+
+Stop downloading a range.
+
+#### `await feed.update([options], [callback])`
+
+Fetch an update for the feed.
+
+Options include:
+
+``` js
+{
+  minLength: ..., // some min length to update to
+  ifAvailable: true,
+  hash: true
+}
+```
+
+See the [Hypercore docs](https://github.com/hypercore-protocol/hypercore) for more info on these options.
+
+#### `await feed.append(blockOrArrayOfBlocks, [callback])`
+
+Append a block or array of blocks to the hypercore
+
+#### `feed.peers`
+
+A list of peers this feed is connected to.
+
+#### `feed.on('peer-add', peer)`
+
+Emitted when a peer is added.
+
+#### `feed.on('peer-remove', peer)`
+
+Emitted when a peer is removed.
+
+#### `feed.on('append')`
+
+Emitted when the feed is appended to, either locally or remotely.
 
 # License
 
