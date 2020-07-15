@@ -229,7 +229,6 @@ class RemoteNetworker extends EventEmitter {
   }
 
   configure (discoveryKey, opts = {}, cb) {
-    const resourceId = this._sessions.createResourceId()
     const configureProm = this._client.network.configure({
       configuration: {
         discoveryKey,
@@ -237,21 +236,13 @@ class RemoteNetworker extends EventEmitter {
         lookup: opts.lookup,
         remember: opts.remember
       },
-      resourceId,
       flush: opts.flush,
       copyFrom: opts.copyFrom,
       overwrite: opts.overwrite
     })
 
     maybeOptional(cb, configureProm)
-    configureProm.resourceId = resourceId
-    configureProm.discoveryKey = discoveryKey
     return configureProm
-  }
-
-  unconfigure (config, cb) {
-    if (typeof config.resourceId !== 'number' || !config.discoveryKey) throw new Error('Must pass a configure return value')
-    return maybeOptional(cb, this._client.network.unconfigure({ discoveryKey: config.discoveryKey, resourceId: config.resourceId }))
   }
 
   async status (discoveryKey, cb) {
