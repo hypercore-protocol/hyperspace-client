@@ -175,7 +175,7 @@ class RemoteNetworker extends EventEmitter {
       onExtension: this._onextension.bind(this)
     })
 
-    this.ready()
+    this.ready().catch(noop)
   }
 
   // Event Handlers
