@@ -513,7 +513,7 @@ class RemoteHypercore extends Nanoresource {
 
     if (typeof opts === 'number') opts = { minLength: opts }
     if (typeof opts.minLength !== 'number') opts.minLength = this.length + 1
-    return this._client.hypercore.update({
+    return await this._client.hypercore.update({
       ...opts,
       id: this._id
     })
