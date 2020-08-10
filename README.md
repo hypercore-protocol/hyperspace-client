@@ -205,6 +205,14 @@ See the [Hypercore docs](https://github.com/hypercore-protocol/hypercore) for mo
 
 Append a block or array of blocks to the hypercore
 
+#### `await feed.watchDownloads()`
+
+Emit `download` events for all blocks downloaded from now.
+
+#### `await feed.unwatchDownloads()`
+
+Stop emitting `download` events.
+
 #### `feed.peers`
 
 A list of peers this feed is connected to.
@@ -220,6 +228,10 @@ Emitted when a peer is removed.
 #### `feed.on('append')`
 
 Emitted when the feed is appended to, either locally or remotely.
+
+#### `feed.on('download', seq)`
+
+Emitted when block is downloaded. Has to be enabled with `watchDownloads()` first.
 
 # License
 

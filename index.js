@@ -73,6 +73,11 @@ class RemoteCorestore extends EventEmitter {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
         remoteCore._onwait(onWaitId, seq)
+      },
+      onDownload ({ id, seq }) {
+        const remoteCore = this._sessions.get(id)
+        if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
+        remoteCore._ondownload({ seq })
       }
     })
     this._client.corestore.onRequest(this, {
@@ -446,6 +451,11 @@ class RemoteHypercore extends Nanoresource {
     ext.onmessage(data, remotePeer)
   }
 
+  _ondownload (rsp) {
+    // TODO: Add to local bitfield?
+    this.emit('download', rsp.seq)
+  }
+
   // Private Methods
 
   _indexOfPeer (remotePublicKey) {
@@ -568,6 +578,16 @@ class RemoteHypercore extends Nanoresource {
     return rsp.bytes
   }
 
+  async _watchDownloads () {
+    if (!this.opened) await this.open()
+    if (this.closed) throw new Error('Feed is closed')
+    return this._client.hypercore.watchDownloads({ id: this._id })
+  }
+
+  async _unwatchDownloads () {
+    return this._client.hypercore.unwatchDownloads({ id: this._id })
+  }
+
   // Public Methods
 
   append (blocks, cb) {
@@ -688,6 +708,14 @@ class RemoteHypercore extends Nanoresource {
     }
 
     return prom.then(() => () => this._client.hypercore.releaseLockNoReply({ id: this._id }))
+  }
+
+  watchDownloads (cb) {
+    return maybe(cb, this._watchDownloads())
+  }
+
+  unwatchDownloads (cb) {
+    return maybe(cb, this._unwatchDownloads())
   }
 
   // TODO: Unimplemented methods
