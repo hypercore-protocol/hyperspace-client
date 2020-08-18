@@ -28,10 +28,15 @@ Make a new Hyperspace RPC client. Options include:
 
 ``` js
 {
-  host: 'hyperspace' // the ipc name of the running server
-                     // defaults to hyperspace
+  host: 'hyperspace', // the ipc name of the running server
+                      // defaults to hyperspace
+  port                // a TCP port to connect to
 }
 ```
+
+If `port` is specified, or `host` and `port` are both specified, then the client will attempt to connect over TCP.
+
+If you only provide a `host` option, then it will be considered a Unix socket name.
 
 #### `await HyperspaceClient.serverReady([host])`
 
