@@ -69,10 +69,10 @@ class RemoteCorestore extends EventEmitter {
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
         remoteCore._onextension({ resourceId, remotePublicKey, data })
       },
-      onWait ({ id, onWaitId }) {
+      onWait ({ id, onWaitId, seq }) {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
-        remoteCore._onwait(onWaitId)
+        remoteCore._onwait(onWaitId, seq)
       }
     })
     this._client.corestore.onRequest(this, {
@@ -408,11 +408,11 @@ class RemoteHypercore extends Nanoresource {
 
   // Events
 
-  _onwait (id) {
+  _onwait (id, seq) {
     const onwait = this._onwaits.get(id)
     if (onwait) {
       this._onwaits.free(id)
-      onwait()
+      onwait(seq)
     }
   }
 
