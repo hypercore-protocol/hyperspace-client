@@ -802,8 +802,8 @@ module.exports = class HyperspaceClient {
     this.corestore = (name) => this._corestore.namespace(name)
   }
 
-  static async serverReady (host) {
-    const sock = getSocketName(host)
+  static async serverReady (opts) {
+    const sock = getNetworkOptions(opts)
     return new Promise((resolve) => {
       retry()
 
