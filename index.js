@@ -363,6 +363,18 @@ class RemoteHypercore extends Nanoresource {
     this._extensions = new Map()
     this._onwaits = new FreeMap(1)
 
+    // Track listeners for the download event, and enable/disable download watching.
+    this.on('newListener', (event, _listener) => {
+      if (event === 'download' && !this.listenerCount(event)) {
+        this._watchDownloads()
+      }
+    })
+    this.on('removeListener', (event, _listener) => {
+      if (event === 'download' && !this.listenerCount(event)) {
+        this._unwatchDownloads()
+      }
+    })
+
     if (!this.lazy) this.ready(() => {})
   }
 
@@ -579,13 +591,19 @@ class RemoteHypercore extends Nanoresource {
   }
 
   async _watchDownloads () {
-    if (!this.opened) await this.open()
-    if (this.closed) throw new Error('Feed is closed')
-    return this._client.hypercore.watchDownloads({ id: this._id })
+    try {
+      if (!this.opened) await this.open()
+      if (this.closed) return
+      await this._client.hypercore.watchDownloads({ id: this._id })
+    } catch (_) {}
   }
 
   async _unwatchDownloads () {
-    return this._client.hypercore.unwatchDownloads({ id: this._id })
+    try {
+      if (!this.opened) await this.open()
+      if (this.closed) return
+      await this._client.hypercore.unwatchDownloads({ id: this._id })
+    } catch (_) {}
   }
 
   // Public Methods
@@ -708,14 +726,6 @@ class RemoteHypercore extends Nanoresource {
     }
 
     return prom.then(() => () => this._client.hypercore.releaseLockNoReply({ id: this._id }))
-  }
-
-  watchDownloads (cb) {
-    return maybe(cb, this._watchDownloads())
-  }
-
-  unwatchDownloads (cb) {
-    return maybe(cb, this._unwatchDownloads())
   }
 
   // TODO: Unimplemented methods
