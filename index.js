@@ -341,6 +341,7 @@ class RemoteHypercore extends Nanoresource {
     this.length = 0
     this.byteLength = 0
     this.writable = false
+    this.sparse = true
     this.peers = []
     this.valueEncoding = null
     if (opts.valueEncoding) {
