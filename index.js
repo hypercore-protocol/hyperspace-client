@@ -73,6 +73,11 @@ class RemoteCorestore extends EventEmitter {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
         remoteCore._onwait(onWaitId, seq)
+      },
+      onDownload ({ id, seq }) {
+        const remoteCore = this._sessions.get(id)
+        if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
+        remoteCore._ondownload({ seq })
       }
     })
     this._client.corestore.onRequest(this, {
@@ -359,6 +364,18 @@ class RemoteHypercore extends Nanoresource {
     this._extensions = new Map()
     this._onwaits = new FreeMap(1)
 
+    // Track listeners for the download event, and enable/disable download watching.
+    this.on('newListener', (event) => {
+      if (event === 'download' && !this.listenerCount(event)) {
+        this._watchDownloads()
+      }
+    })
+    this.on('removeListener', (event) => {
+      if (event === 'download' && !this.listenerCount(event)) {
+        this._unwatchDownloads()
+      }
+    })
+
     if (!this.lazy) this.ready(() => {})
   }
 
@@ -445,6 +462,11 @@ class RemoteHypercore extends Nanoresource {
     const ext = this._extensions.get(resourceId)
     if (ext.destroyed) return
     ext.onmessage(data, remotePeer)
+  }
+
+  _ondownload (rsp) {
+    // TODO: Add to local bitfield?
+    this.emit('download', rsp.seq)
   }
 
   // Private Methods
@@ -567,6 +589,22 @@ class RemoteHypercore extends Nanoresource {
     if (this.closed) throw new Error('Feed is closed')
     const rsp = await this._client.hypercore.downloaded({ id: this._id, start, end })
     return rsp.bytes
+  }
+
+  async _watchDownloads () {
+    try {
+      if (!this.opened) await this.open()
+      if (this.closed) return
+      this._client.hypercore.watchDownloadsNoReply({ id: this._id })
+    } catch (_) {}
+  }
+
+  async _unwatchDownloads () {
+    try {
+      if (!this.opened) await this.open()
+      if (this.closed) return
+      this._client.hypercore.unwatchDownloadsNoReply({ id: this._id })
+    } catch (_) {}
   }
 
   // Public Methods

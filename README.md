@@ -221,6 +221,10 @@ Emitted when a peer is removed.
 
 Emitted when the feed is appended to, either locally or remotely.
 
+#### `feed.on('download', seq)`
+
+Emitted when a block is downloaded.
+
 # License
 
 MIT
