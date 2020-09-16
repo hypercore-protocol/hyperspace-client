@@ -364,12 +364,12 @@ class RemoteHypercore extends Nanoresource {
     this._onwaits = new FreeMap(1)
 
     // Track listeners for the download event, and enable/disable download watching.
-    this.on('newListener', (event, _listener) => {
+    this.on('newListener', (event) => {
       if (event === 'download' && !this.listenerCount(event)) {
         this._watchDownloads()
       }
     })
-    this.on('removeListener', (event, _listener) => {
+    this.on('removeListener', (event) => {
       if (event === 'download' && !this.listenerCount(event)) {
         this._unwatchDownloads()
       }
