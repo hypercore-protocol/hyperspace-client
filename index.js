@@ -594,7 +594,7 @@ class RemoteHypercore extends Nanoresource {
     try {
       if (!this.opened) await this.open()
       if (this.closed) return
-      await this._client.hypercore.watchDownloads({ id: this._id })
+      this._client.hypercore.watchDownloadsNoReply({ id: this._id })
     } catch (_) {}
   }
 
@@ -602,7 +602,7 @@ class RemoteHypercore extends Nanoresource {
     try {
       if (!this.opened) await this.open()
       if (this.closed) return
-      await this._client.hypercore.unwatchDownloads({ id: this._id })
+      this._client.hypercore.unwatchDownloadsNoReply({ id: this._id })
     } catch (_) {}
   }
 
