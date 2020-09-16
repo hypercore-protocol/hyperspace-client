@@ -205,6 +205,10 @@ See the [Hypercore docs](https://github.com/hypercore-protocol/hypercore) for mo
 
 Append a block or array of blocks to the hypercore
 
+#### `await feed.getBitfield([start], [length])
+
+Get a bitfield of downloaded blocks. Optionally restrict to the range from `start` for `length` blocks. Resolves to a [bitfield](https://github.com/fb55/bitfield) instance.
+
 #### `feed.peers`
 
 A list of peers this feed is connected to.

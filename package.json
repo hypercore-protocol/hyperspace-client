@@ -23,6 +23,8 @@
   "homepage": "https://github.com/hyperspace-org/hyperspace#readme",
   "dependencies": {
     "@hyperspace/rpc": "^1.0.0",
+    "bitfield": "^3.0.0",
+    "bitfield-rle": "^2.2.1",
     "call-me-maybe": "^1.0.1",
     "codecs": "^2.1.0",
     "freemap": "^1.0.0",

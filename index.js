@@ -1,4 +1,6 @@
 const { EventEmitter } = require('events')
+const rle = require('bitfield-rle')
+const Bitfield = require('bitfield')
 const maybe = require('call-me-maybe')
 const codecs = require('codecs')
 const hypercoreCrypto = require('hypercore-crypto')
@@ -546,6 +548,17 @@ class RemoteHypercore extends Nanoresource {
     return rsp.has
   }
 
+  async _getBitfield (start, length) {
+    const rsp = await this._client.hypercore.has({
+      seq: start || 0,
+      bitfield: true,
+      length,
+      id: this._id
+    })
+    if (!rsp.bitfield) throw new Error('Did not receive a bitfield')
+    return new Bitfield(rle.decode(rsp.bitfield))
+  }
+
   async _download (range, resourceId) {
     if (!this.opened) await this.open()
     if (this.closed) throw new Error('Feed is closed')
@@ -610,6 +623,10 @@ class RemoteHypercore extends Nanoresource {
 
   has (seq, cb) {
     return maybe(cb, this._has(seq))
+  }
+
+  getBitfield (start, length, cb) {
+    return maybe(cb, this._getBitfield(start, length))
   }
 
   cancel (get) {
