@@ -665,6 +665,7 @@ class RemoteHypercore extends Nanoresource {
 
   download (range, cb) {
     if (typeof range === 'number') range = { start: range, end: range + 1 }
+    if (!range) range = {}
     if (Array.isArray(range)) range = { blocks: range }
 
     // much easier to run this in the client due to pbuf defaults
@@ -681,7 +682,12 @@ class RemoteHypercore extends Nanoresource {
       range.start = min === -1 ? 0 : min
       range.end = max
     }
-    if (range.end === -1) range.end = 0 // means the same
+
+    // massage end = -1, over to something more protobuf friendly
+    if (range.end === undefined || range.end === -1) {
+      range.end = 0
+      range.live = true
+    }
 
     const resourceId = this._sessions.createResourceId()
 
