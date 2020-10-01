@@ -318,11 +318,12 @@ class RemoteNetworkerExtension {
 
   send (message, peer) {
     if (this.destroyed) return
+    const buf = this.encoding.encode(message)
     this.networker._client.network.sendExtensionNoReply({
       id: 0,
       resourceId: this.resourceId,
       remotePublicKey: peer.remotePublicKey,
-      data: message
+      data: buf
     })
   }
 
@@ -812,11 +813,12 @@ class RemoteHypercoreExtension {
 
   send (message, peer) {
     if (this.feed._id === undefined || this.destroyed) return
+    const buf = this.encoding.encode(message)
     this.feed._client.hypercore.sendExtensionNoReply({
       id: this.feed._id,
       resourceId: this.resourceId,
       remotePublicKey: peer.remotePublicKey,
-      data: message
+      data: buf
     })
   }
 
