@@ -793,6 +793,7 @@ class RemoteHypercoreExtension {
 
 module.exports = class HyperspaceClient {
   constructor (opts = {}) {
+    opts.host = opts.host || process.env['HYPERSPACE_HOST']
     const sessions = new Sessions()
 
     this._socketOpts = getNetworkOptions(opts)
