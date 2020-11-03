@@ -228,7 +228,6 @@ class RemoteNetworker extends EventEmitter {
   }
 
   async _configure (discoveryKey, opts) {
-    console.log('discovery key:', discoveryKey)
     if (typeof discoveryKey === 'object' && !Buffer.isBuffer(discoveryKey)) {
       const core = discoveryKey
       await core.ready()
@@ -254,10 +253,8 @@ class RemoteNetworker extends EventEmitter {
   }
 
   configure (discoveryKey, opts = {}, cb) {
-    console.log('CONFIGURING')
     const configureProm = this._configure(discoveryKey, opts)
     maybeOptional(cb, configureProm)
-    configureProm.then(() => console.log('!! CONFIGURED'))
     return configureProm
   }
 
