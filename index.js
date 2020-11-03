@@ -227,14 +227,14 @@ class RemoteNetworker extends EventEmitter {
     }
   }
 
-  // Public Methods
-
-  ready (cb) {
-    return maybe(cb, this._open())
-  }
-
-  configure (discoveryKey, opts = {}, cb) {
-    const configureProm = this._client.network.configure({
+  async _configure (discoveryKey, opts) {
+    console.log('discovery key:', discoveryKey)
+    if (typeof discoveryKey === 'object' && !Buffer.isBuffer(discoveryKey)) {
+      const core = discoveryKey
+      await core.ready()
+      discoveryKey = core.discoveryKey
+    }
+    return this._client.network.configure({
       configuration: {
         discoveryKey,
         announce: opts.announce,
@@ -245,8 +245,19 @@ class RemoteNetworker extends EventEmitter {
       copyFrom: opts.copyFrom,
       overwrite: opts.overwrite
     })
+  }
 
+  // Public Methods
+
+  ready (cb) {
+    return maybe(cb, this._open())
+  }
+
+  configure (discoveryKey, opts = {}, cb) {
+    console.log('CONFIGURING')
+    const configureProm = this._configure(discoveryKey, opts)
     maybeOptional(cb, configureProm)
+    configureProm.then(() => console.log('!! CONFIGURED'))
     return configureProm
   }
 
@@ -845,6 +856,8 @@ module.exports = class HyperspaceClient {
 
     this.network = new RemoteNetworker({ client: this._client, sessions })
     this.corestore = (name) => this._corestore.namespace(name)
+    // Exposed like this so that you can destructure: const { replicate } = new Client()
+    this.replicate = (core, cb) => this._replicate(core, cb)
   }
 
   static async serverReady (opts) {
@@ -879,6 +892,24 @@ module.exports = class HyperspaceClient {
 
   ready (cb) {
     return maybe(cb, this.network.ready())
+  }
+
+  async _replicate (core, cb) {
+    try {
+      await this.network.configure(core, {
+        announce: true,
+        lookup: true
+      })
+    } catch (err) {
+      if (cb) return cb(err)
+      throw err
+    }
+    try {
+      await core.update({ ifAvailable: true })
+    } catch (_) {
+      // If this update fails, the error can be ignored.
+    }
+    if (cb) return cb(null)
   }
 }
 
