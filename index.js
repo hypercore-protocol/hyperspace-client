@@ -535,6 +535,7 @@ class RemoteHypercore extends Nanoresource {
     if (this.closed) throw new Error('Feed is closed')
 
     if (typeof opts === 'number') opts = { minLength: opts }
+    if (!opts) opts = {}
     if (typeof opts.minLength !== 'number') opts.minLength = this.length + 1
     return await this._client.hypercore.update({
       ...opts,
