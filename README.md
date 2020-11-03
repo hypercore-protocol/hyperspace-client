@@ -63,6 +63,10 @@ to load a specific corestore. If you do not pass a namespace a random one is gen
 
 The remote corestore network instance.
 
+#### `client.replicate(core)`
+
+A one-line replication function for `RemoteHypercores` (see below for details).
+
 ## Remote Corestore
 
 The remote corestore instances has an API that mimicks the normal [corestore](https://github.com/andrewosh/corestore) API.
@@ -104,9 +108,9 @@ Emitted when a peer is added.
 
 Emitted when a peer is removed.
 
-#### `await network.configure(discoveryKey, options)`
+#### `await network.configure(discoveryKey | RemoteHypercore, options)`
 
-Configure the network for this specific discovery key.
+Configure the network for this specific discovery key or RemoteHypercore.
 Options include:
 
 ```
@@ -224,6 +228,14 @@ Emitted when the feed is appended to, either locally or remotely.
 #### `feed.on('download', seq)`
 
 Emitted when a block is downloaded.
+
+## Replicator
+
+Hyperspace also includes a simple replication function for `RemoteHypercores` that does two things:
+1. It first configures the network (`client.network.configure(core, { announce: true, lookup: true })`)
+2. Then it does a `core.update({ ifAvailable: true })` to try to fetch the latest length from the network.
+
+This saves a bit of time when swarming a `RemoteHypercore`.
 
 # License
 
