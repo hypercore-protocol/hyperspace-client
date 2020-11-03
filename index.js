@@ -854,7 +854,7 @@ module.exports = class HyperspaceClient {
     this.network = new RemoteNetworker({ client: this._client, sessions })
     this.corestore = (name) => this._corestore.namespace(name)
     // Exposed like this so that you can destructure: const { replicate } = new Client()
-    this.replicate = (core, cb) => this._replicate(core, cb)
+    this.replicate = (core, cb) => maybe(cb, this._replicate(core))
   }
 
   static async serverReady (opts) {
@@ -891,22 +891,16 @@ module.exports = class HyperspaceClient {
     return maybe(cb, this.network.ready())
   }
 
-  async _replicate (core, cb) {
-    try {
-      await this.network.configure(core, {
-        announce: true,
-        lookup: true
-      })
-    } catch (err) {
-      if (cb) return cb(err)
-      throw err
-    }
+  async _replicate (core) {
+    await this.network.configure(core, {
+      announce: true,
+      lookup: true
+    })
     try {
       await core.update({ ifAvailable: true })
     } catch (_) {
       // If this update fails, the error can be ignored.
     }
-    if (cb) return cb(null)
   }
 }
 
