@@ -230,7 +230,7 @@ class RemoteNetworker extends EventEmitter {
   async _configure (discoveryKey, opts) {
     if (typeof discoveryKey === 'object' && !Buffer.isBuffer(discoveryKey)) {
       const core = discoveryKey
-      await core.ready()
+      if (!core.discoveryKey) await core.ready()
       discoveryKey = core.discoveryKey
     }
     return this._client.network.configure({
