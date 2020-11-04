@@ -627,6 +627,7 @@ class RemoteHypercore extends Nanoresource {
       cb = opts
       opts = null
     }
+    if (!(seq >= 0)) throw new Error('seq must be a positive number')
 
     const resourceId = this._sessions.createResourceId()
     const prom = this._get(seq, opts, resourceId)
