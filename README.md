@@ -237,6 +237,10 @@ Hyperspace also includes a simple replication function for `RemoteHypercores` th
 
 This saves a bit of time when swarming a `RemoteHypercore`.
 
+#### `await replicate(core)`
+
+Quickly connect a `RemoteHypercore` to the Hyperswarm network.
+
 # License
 
 MIT
