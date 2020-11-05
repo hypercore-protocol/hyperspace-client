@@ -385,6 +385,14 @@ class RemoteHypercore extends Nanoresource {
     })
 
     if (!this.lazy) this.ready(() => {})
+
+    if (this.sparse && opts.eagerUpdate) {
+      const self = this
+      this.update({ ifAvailable: false }, function loop (err) {
+        if (err) self.emit('update-error', err)
+        self.update(loop)
+      })
+    }
   }
 
   ready (cb) {
