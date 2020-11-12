@@ -660,9 +660,10 @@ class RemoteHypercore extends Nanoresource {
     }
     const seekProm = this._seek(byteOffset, opts)
     if (!cb) return seekProm
-    seekProm
-      .then(({ seq, blockOffset }) => process.nextTick(cb, null, seq, blockOffset))
-      .catch(err => process.nextTick(cb, err))
+    seekProm.then(
+      ({ seq, blockOffset }) => process.nextTick(cb, null, seq, blockOffset),
+      err => process.nextTick(cb, err)
+    )
   }
 
   has (seq, cb) {
@@ -747,7 +748,7 @@ class RemoteHypercore extends Nanoresource {
         if (cb) cb(err, val)
       }
 
-      prom.then(() => process.nextTick(onlocked, release)).catch(noop)
+      prom.then(() => process.nextTick(onlocked, release), noop)
       return
     }
 
