@@ -1,7 +1,6 @@
 const { EventEmitter } = require('events')
 const maybe = require('call-me-maybe')
 const codecs = require('codecs')
-const hypercoreCrypto = require('hypercore-crypto')
 const inspect = require('inspect-custom-symbol')
 const FreeMap = require('freemap')
 const { WriteStream, ReadStream } = require('hypercore-streams')
@@ -427,7 +426,7 @@ class RemoteHypercore extends Nanoresource {
       weak: this.weak
     })
     this.key = rsp.key
-    this.discoveryKey = hypercoreCrypto.discoveryKey(this.key)
+    this.discoveryKey = rsp.discoveryKey
     this.writable = rsp.writable
     this.length = rsp.length
     this.byteLength = rsp.byteLength
