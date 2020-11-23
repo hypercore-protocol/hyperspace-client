@@ -77,6 +77,11 @@ class RemoteCorestore extends EventEmitter {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
         remoteCore._ondownload({ seq })
+      },
+      onUpload ({ id, seq }) {
+        const remoteCore = this._sessions.get(id)
+        if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
+        remoteCore._onupload({ seq })
       }
     })
     this._client.corestore.onRequest(this, {
@@ -372,15 +377,21 @@ class RemoteHypercore extends Nanoresource {
     this._extensions = new Map()
     this._onwaits = new FreeMap(1)
 
-    // Track listeners for the download event, and enable/disable download watching.
+    // Track listeners for some events and enable/disable watching.
     this.on('newListener', (event) => {
       if (event === 'download' && !this.listenerCount(event)) {
         this._watchDownloads()
+      }
+      if (event === 'upload' && !this.listenerCount(event)) {
+        this._watchUploads()
       }
     })
     this.on('removeListener', (event) => {
       if (event === 'download' && !this.listenerCount(event)) {
         this._unwatchDownloads()
+      }
+      if (event === 'upload' && !this.listenerCount(event)) {
+        this._unwatchUploads()
       }
     })
 
@@ -483,6 +494,11 @@ class RemoteHypercore extends Nanoresource {
   _ondownload (rsp) {
     // TODO: Add to local bitfield?
     this.emit('download', rsp.seq)
+  }
+
+  _onupload (rsp) {
+    // TODO: Add to local bitfield?
+    this.emit('upload', rsp.seq)
   }
 
   // Private Methods
@@ -621,6 +637,22 @@ class RemoteHypercore extends Nanoresource {
       if (!this.opened) await this.open()
       if (this.closed) return
       this._client.hypercore.unwatchDownloadsNoReply({ id: this._id })
+    } catch (_) {}
+  }
+
+  async _watchUploads () {
+    try {
+      if (!this.opened) await this.open()
+      if (this.closed) return
+      this._client.hypercore.watchUploadsNoReply({ id: this._id })
+    } catch (_) {}
+  }
+
+  async _unwatchUploads () {
+    try {
+      if (!this.opened) await this.open()
+      if (this.closed) return
+      this._client.hypercore.unwatchUploadsNoReply({ id: this._id })
     } catch (_) {}
   }
 
