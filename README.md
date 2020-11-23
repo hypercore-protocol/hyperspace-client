@@ -225,9 +225,13 @@ Emitted when a peer is removed.
 
 Emitted when the feed is appended to, either locally or remotely.
 
-#### `feed.on('download', seq)`
+#### `feed.on('download', seq, byteLength)`
 
 Emitted when a block is downloaded.
+
+#### `feed.on('upload', seq, byteLength)`
+
+Emitted when a block is uploaded.
 
 ## Replicator
 
