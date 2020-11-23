@@ -73,15 +73,15 @@ class RemoteCorestore extends EventEmitter {
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
         remoteCore._onwait(onWaitId, seq)
       },
-      onDownload ({ id, seq }) {
+      onDownload ({ id, seq, byteLength }) {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
-        remoteCore._ondownload({ seq })
+        remoteCore._ondownload({ seq, byteLength })
       },
-      onUpload ({ id, seq }) {
+      onUpload ({ id, seq, byteLength }) {
         const remoteCore = this._sessions.get(id)
         if (!remoteCore) throw new Error('Invalid RemoteHypercore ID.')
-        remoteCore._onupload({ seq })
+        remoteCore._onupload({ seq, byteLength })
       }
     })
     this._client.corestore.onRequest(this, {
@@ -493,12 +493,12 @@ class RemoteHypercore extends Nanoresource {
 
   _ondownload (rsp) {
     // TODO: Add to local bitfield?
-    this.emit('download', rsp.seq)
+    this.emit('download', rsp.seq, rsp.byteLength)
   }
 
   _onupload (rsp) {
     // TODO: Add to local bitfield?
-    this.emit('upload', rsp.seq)
+    this.emit('upload', rsp.seq, rsp.byteLength)
   }
 
   // Private Methods
