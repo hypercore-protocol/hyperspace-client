@@ -225,13 +225,13 @@ Emitted when a peer is removed.
 
 Emitted when the feed is appended to, either locally or remotely.
 
-#### `feed.on('download', seq, data, byteLength)`
+#### `feed.on('download', seq, data)`
 
-Emitted when a block is downloaded. Currently `data` is null and is only present for backwards compatibility.
+Emitted when a block is downloaded. `data` is a pseudo-buffer with `{length, byteLength}` but no buffer content.
 
-#### `feed.on('upload', seq, data, byteLength)`
+#### `feed.on('upload', seq, data)`
 
-Emitted when a block is uploaded. Currently `data` is null and is only present for backwards compatibility.
+Emitted when a block is uploaded. `data` is a pseudo-buffer with `{length, byteLength}` but no buffer content.
 
 ## Replicator
 
