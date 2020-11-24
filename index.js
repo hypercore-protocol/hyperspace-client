@@ -493,12 +493,12 @@ class RemoteHypercore extends Nanoresource {
 
   _ondownload (rsp) {
     // TODO: Add to local bitfield?
-    this.emit('download', rsp.seq, null, rsp.byteLength)
+    this.emit('download', rsp.seq, {length: rsp.byteLength, byteLength: rsp.byteLength})
   }
 
   _onupload (rsp) {
     // TODO: Add to local bitfield?
-    this.emit('upload', rsp.seq, null, rsp.byteLength)
+    this.emit('upload', rsp.seq, {length: rsp.byteLength, byteLength: rsp.byteLength})
   }
 
   // Private Methods
