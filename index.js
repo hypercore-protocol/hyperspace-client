@@ -4,6 +4,7 @@ const codecs = require('codecs')
 const inspect = require('inspect-custom-symbol')
 const FreeMap = require('freemap')
 const { WriteStream, ReadStream } = require('hypercore-streams')
+const PROMISES = Symbol.for('hypercore.promises')
 
 const { NanoresourcePromise: Nanoresource } = require('nanoresource-promise/emitter')
 const HRPC = require('@hyperspace/rpc')
@@ -369,6 +370,7 @@ class RemoteHypercore extends Nanoresource {
 
     this.weak = !!opts.weak
     this.lazy = !!opts.lazy
+    this[PROMISES] = true
 
     this._client = client
     this._sessions = sessions
