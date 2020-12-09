@@ -927,6 +927,10 @@ module.exports = class HyperspaceClient {
     return maybe(cb, this._client.hyperspace.status())
   }
 
+  stop (cb) {
+    return maybe(cb, this._client.hyperspace.stopNoReply())
+  }
+
   close () {
     return this._client.destroy()
   }
