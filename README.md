@@ -236,8 +236,8 @@ Emitted when a block is uploaded. `data` is a pseudo-buffer with `{length, byteL
 ## Replicator
 
 Hyperspace also includes a simple replication function for `RemoteHypercores` that does two things:
-1. It first configures the network (`client.network.configure(core, { announce: true, lookup: true })`)
-2. Then it does a `core.update({ ifAvailable: true })` to try to fetch the latest length from the network.
+1. It first configures the network (`client.network.configure(feed, { announce: true, lookup: true })`)
+2. Then it does a `feed.update({ ifAvailable: true })` to try to fetch the latest length from the network.
 
 This saves a bit of time when swarming a `RemoteHypercore`.
 
