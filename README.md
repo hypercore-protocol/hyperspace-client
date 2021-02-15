@@ -1,6 +1,6 @@
 # @hyperspace/client
 
-Standalone Hyperspace RPC client
+Standalone Hyperspace RPC client for the [Hyperspace](https://github.com/hypercore-protocol/hyperspace) server.
 
 ```
 npm install @hyperspace/client
@@ -63,9 +63,9 @@ to load a specific corestore. If you do not pass a namespace a random one is gen
 
 The remote corestore network instance.
 
-#### `client.replicate(core)`
+#### `await client.replicate(feed | feed.discoveryKey)`
 
-A one-line replication function for `RemoteHypercores` (see below for details).
+A one-line replication function for a `RemoteHypercore` feed (see below for details).
 
 ## Remote Corestore
 
@@ -126,9 +126,9 @@ Options include:
 
 Register a network protocol extension.
 
-## Remote Feed
+## Remote Hypercore Feed
 
-The remote feed instances has an API that mimicks the normal [Hypercore](https://github.com/hypercore-protocol/hypercore) API.
+The remote Hypercore feed instances has an API that mimicks the normal [Hypercore](https://github.com/hypercore-protocol/hypercore) API.
 
 #### `feed.key`
 
@@ -236,14 +236,14 @@ Emitted when a block is uploaded. `data` is a pseudo-buffer with `{length, byteL
 ## Replicator
 
 Hyperspace also includes a simple replication function for `RemoteHypercores` that does two things:
-1. It first configures the network (`client.network.configure(core, { announce: true, lookup: true })`)
-2. Then it does a `core.update({ ifAvailable: true })` to try to fetch the latest length from the network.
+1. It first configures the network (`client.network.configure(feed, { announce: true, lookup: true })`)
+2. Then it does a `feed.update({ ifAvailable: true })` to try to fetch the latest length from the network.
 
 This saves a bit of time when swarming a `RemoteHypercore`.
 
-#### `await replicate(core)`
+#### `await client.replicate(feed | feed.discoveryKey)`
 
-Quickly connect a `RemoteHypercore` to the Hyperswarm network.
+Quickly connect a `RemoteHypercore` feed to the Hyperswarm network using a Hypercore feed (feed object or feed.discoveryKey).
 
 # License
 
