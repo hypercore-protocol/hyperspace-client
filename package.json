@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hyperspace-org/hyperspace.git"
+    "url": "git+https://github.com/hypercore-protocol/hyperspace-client.git"
   },
   "keywords": [
     "hypercore",
@@ -18,9 +18,9 @@
   "author": "Hypercore Protocol Team",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/hyperspace-org/hyperspace/issues"
+    "url": "https://github.com/hypercore-protocol/hyperspace-client/issues"
   },
-  "homepage": "https://github.com/hyperspace-org/hyperspace#readme",
+  "homepage": "https://github.com/hypercore-protocol/hyperspace-client#readme",
   "dependencies": {
     "@hyperspace/rpc": "^1.8.0",
     "call-me-maybe": "^1.0.1",
